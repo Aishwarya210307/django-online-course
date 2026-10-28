@@ -20,5 +20,10 @@ urlpatterns = [
         views.show_exam_result,
         name="show_exam_result"
     ),
+    path(
+        "logout/",
+        views.logout_user,
+        name="logout"
+    ),
 ]
 
