@@ -1,13 +1,15 @@
-
 from django.shortcuts import render, get_object_or_404, redirect
+from django.contrib.auth import logout
 from django.contrib.auth.decorators import login_required
-from django.contrib import messages
+from django.http import JsonResponse
+from django.views.decorators.http import require_POST
 
 from .models import Course, Choice, Submission
 
 
 def course_details(request, course_id):
     course = get_object_or_404(Course, pk=course_id)
+
     return render(
         request,
         "onlinecourse/course_details_bootstrap.html",
@@ -20,14 +22,19 @@ def submit(request, course_id):
     course = get_object_or_404(Course, pk=course_id)
 
     if request.method != "POST":
-        return redirect("onlinecourse:course_details", course_id=course.id)
+        return redirect(
+            "onlinecourse:course_details",
+            course_id=course.id
+        )
 
     questions = course.questions.all()
     score = 0
     selected_choices = []
 
     for question in questions:
-        selected_id = request.POST.get(f"question_{question.id}")
+        selected_id = request.POST.get(
+            f"question_{question.id}"
+        )
 
         if not selected_id:
             continue
@@ -48,6 +55,7 @@ def submit(request, course_id):
         course=course,
         score=score
     )
+
     submission.choices.set(selected_choices)
 
     return redirect(
@@ -65,7 +73,8 @@ def show_exam_result(request, submission_id):
     )
 
     total_score = sum(
-        question.grade for question in submission.course.questions.all()
+        question.grade
+        for question in submission.course.questions.all()
     )
 
     results = []
@@ -75,7 +84,9 @@ def show_exam_result(request, submission_id):
             question=question
         ).first()
 
-        correct = question.choices.filter(is_correct=True).first()
+        correct = question.choices.filter(
+            is_correct=True
+        ).first()
 
         results.append({
             "question": question,
@@ -96,3 +107,11 @@ def show_exam_result(request, submission_id):
         }
     )
 
+
+@require_POST
+def logout_user(request):
+    logout(request)
+
+    return JsonResponse({
+        "message": "Logout successful"
+    })
